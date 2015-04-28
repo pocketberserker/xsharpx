@@ -11,23 +11,26 @@ namespace XSharpx.Tests
     [NUnit.Framework.TestFixture]
     class OptionTest
     {
+        private bool Check(Option<int> left, Option<int> right)
+        {
+            return left
+                .ZipWith<int, bool>(right, x => y => x == y)
+                .ValueOr(() => left.IsEmpty && right.IsEmpty);
+        }
+
         [Property(Arbitrary= new Type[]{ typeof(XSharpxArbs) })]
         public bool MonadLeftIdentityLaw(Func<int, Option<int>> f, int a)
         {
             var left = Option.Some(a).SelectMany(f);
             var right = f(a);
-            return left
-                .ZipWith<int, bool>(right, x => y => x == y)
-                .Fold(x => x, () => left.IsEmpty && right.IsEmpty);
+            return Check(left, right);
         }
 
         [Property(Arbitrary= new Type[]{ typeof(XSharpxArbs) })]
         public bool MonadRightIdentityLaw(Option<int> a)
         {
             var left = a.SelectMany(Option.Some);
-            return left
-                .ZipWith<int, bool>(a, x => y => x == y)
-                .Fold(x => x, () => left.IsEmpty && a.IsEmpty);
+            return Check(left, a);
         }
 
         [Property(Arbitrary= new Type[]{ typeof(XSharpxArbs) })]
@@ -35,9 +38,7 @@ namespace XSharpx.Tests
         {
             var left = m.SelectMany(f).SelectMany(g);
             var right = m.SelectMany(x => f(x).SelectMany(g));
-            return left
-                .ZipWith<int, bool>(right, x => y => x == y)
-                .Fold(x => x, () => left.IsEmpty && right.IsEmpty);
+            return Check(left, right);
         }
     }
 
